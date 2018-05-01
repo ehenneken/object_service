@@ -121,19 +121,20 @@ def get_simbad_data(id_list, input_type):
     return results
     
 @timeout_decorator.timeout(5)
-def do_position_query(RA, DEC, RADIUS):
+def do_simbad_position_query(RA, DEC, RADIUS):
     QUERY_URL = current_app.config.get('OBJECTS_SIMBAD_TAP_URL')
     current_app.logger.info('TAP service used for position query: %s'%QUERY_URL)
+    # Maximum number of objects to be returned
+    max_objects = current_app.config.get('OBJECTS_SIMBAD_MAX_REC')
     params = {
         'request' : 'doQuery',
         'lang' : 'adql',
         'format' : 'json',
         'maxrec' : current_app.config.get('OBJECTS_SIMBAD_MAX_REC')
     }
-    params['query'] = "SELECT DISTINCT coo_bibcode \
+    params['query'] = "SELECT DISTINCT oid \
                        FROM basic \
                        WHERE CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', %s, %s, %s)) = 1 \
-                       AND coo_bibcode IS NOT NULL \
                        AND ra IS NOT NULL \
                        AND dec IS NOT NULL;" % (RA, DEC, RADIUS)
     headers = {
@@ -145,7 +146,7 @@ def do_position_query(RA, DEC, RADIUS):
     except Exception, err:
         return {'Error': 'Unable to get results from %s!'%QUERY_URL, 'Error Info': 'SIMBAD query blew up (%s)'%err}
     try:
-        bibcodes = list(set([d[0] for d in r.json()['data']]))
+        simbids = list(set([d[0] for d in r.json()['data']]))
     except Exception, err:
         return {'Error': 'Unable to get results!', 'Error Info': 'Unable to retrieve bibcodes from SIMBAD response (no "data" key)!'}
-    return {'data': bibcodes}
+    return simbids[:max_objects]

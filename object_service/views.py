@@ -3,10 +3,11 @@ from flask_restful import Resource
 from flask_discoverer import advertise
 from flask import Response
 from SIMBAD import get_simbad_data
-from SIMBAD import do_position_query
+from SIMBAD import do_simbad_position_query
 from SIMBAD import parse_position_string
 from NED import get_ned_data
 from NED import get_NED_refcodes
+from NED import do_ned_position_query
 from utils import get_objects_from_query_string
 from utils import translate_query
 import time
@@ -98,11 +99,18 @@ class PositionSearch(Resource):
             return {'Error': 'Unable to get results!',
                     'Error Info': 'Invalid position string: %s'%pstring}, 200
         try:
-            result = do_position_query(RA, DEC, radius)
+            result = do_simbad_position_query(RA, DEC, radius)
         except timeout_decorator.timeout_decorator.TimeoutError:
-            current_app.logger.error('Position query %s timed out' % pstring)
+            current_app.logger.error('SIMBAD position query %s timed out' % pstring)
             return {'Error': 'Unable to get results!',
-                    'Error Info': 'Position query timed out'}, 200
+                    'Error Info': 'SIMBAD position query timed out'}, 200
+        try:
+            result = do_ned_position_query(RA, DEC, radius)
+        except timeout_decorator.timeout_decorator.TimeoutError:
+            current_app.logger.error('NED position query %s timed out' % pstring)
+            return {'Error': 'Unable to get results!',
+                    'Error Info': 'NED position query timed out'}, 200
+
         return result
 
 class QuerySearch(Resource):

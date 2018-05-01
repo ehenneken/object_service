@@ -8,18 +8,19 @@ from flask_discoverer import Discoverer
 from adsmutils import ADSFlask
 
 
-def create_app():
+def create_app(**config):
     """
     Create the application and return it to the user
     :return: flask.Flask application
     """
 
-    app = ADSFlask(__name__, static_folder=None)
+    app = ADSFlask(__name__, static_folder=None, local_config=config or {})
+
     app.url_map.strict_slashes = False
 
     api = Api(app)
     api.add_resource(ObjectSearch, '/', '/<string:objects>', '/<string:objects>/<string:source>')
-    api.add_resource(PositionSearch, '/pos/<string:pstring>')
+    api.add_resource(PositionSearch, '/cone/<string:pstring>')
     api.add_resource(QuerySearch, '/query')
     api.add_resource(ClassicObjectSearch, '/nedsrv')
 

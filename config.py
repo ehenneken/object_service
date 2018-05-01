@@ -5,7 +5,8 @@ OBJECTS_API_TOKEN = 'this should be changed'
 # URL to access the SIMBAB TAP interface
 OBJECTS_SIMBAD_TAP_URL = 'http://simbad.u-strasbg.fr/simbad/sim-tap/sync'
 # URL to access the NED interface
-OBJECTS_NED_URL = 'http://ned.ipac.caltech.edu/srs/ObjectLookup'
+OBJECTS_NED_URL = 'https://ned.ipac.caltech.edu/srs/ObjectLookup'
+OBJECTS_NED_OBJ_URL = 'https://ned.ipac.caltech.edu/cgi-bin/objsearch'
 # Time-out in seconds for SIMBAD TAP service requests
 OBJECTS_SIMBAD_TIMEOUT = 4
 # Time-out in seconds for NED service requests
@@ -15,7 +16,8 @@ OBJECTS_CACHE_TIMEOUT = 604800
 # Default radius for cone search
 OBJECTS_DEFAULT_RADIUS = 0.1
 # Maximum number of records to return from cone search
-OBJECTS_SIMBAD_MAX_REC = 10000
+OBJECTS_SIMBAD_MAX_REC = 1000
+OBJECTS_NED_MAX_REC = 1000
 # Maximum number of records to send bibcodes back for
 OBJECT_SOLR_MAX_HITS = 10000
 # In what environment are we?

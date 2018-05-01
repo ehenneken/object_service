@@ -6,6 +6,7 @@ from flask import request
 from client import client
 import requests
 import json
+from bs4 import BeautifulSoup
 from requests.exceptions import ConnectTimeout, ReadTimeout, ConnectionError
 import timeout_decorator
 import datetime
@@ -193,6 +194,53 @@ def get_NED_refcodes(obj_data):
         return result
     except:
         return {"Error": "Unable to get results!", "Error Info": "No bibcodes returned for query: {0}".format(q)}
- 
-        
+
+@timeout_decorator.timeout(5)
+def do_ned_position_query(RA, DEC, RADIUS):
+    # Query URL at NED to send position search to
+    QUERY_URL = current_app.config.get('OBJECTS_NED_OBJ_URL')
+    # Maximum number of objects to be returned
+    max_objects = current_app.config.get('OBJECTS_NED_MAX_REC')
+    # Default parameters for position search
+    params = {
+        'of':'xml_main',
+        'search_type':'Near Position Search',
+        'img_stamp':'NO',
+        'list_limit':'5',
+        'zv_breaker':'30000.0',
+        'obj_sort':'Distance to search center',
+        'out_equinox':'J2000.0',
+        'out_csys':'Equatorial',
+        'nmp_op':'ANY',
+        'ot_include':'ANY',
+        'z_unit':'z',
+        'z_value1':'',
+        'z_value2':'',
+        'z_constraint':'Unconstrained',
+        'corr_z':'1',
+        'omegav':'0.73',
+        'omegam':'0.27',
+        'hconst':'73',
+        'radius':'2',
+        'in_equinox':'J2000.0',
+        'in_csys':'Equatorial',
+        }
+    # In the request header we specify that it's ADS sending the query
+    headers = {
+        'User-Agent': 'ADS Object Service (Cone Search)',
+        'Content-type': 'application/json',
+    }
+    # Add the position data to the query parameters
+    params['lon'] = RA
+    params['lat'] = DEC
+    params['radius'] = RADIUS
+    # Do the query
+    results = requests.get(QUERY_URL, params=params, headers=headers)
+    # Parse the VOTable data sent back
+    ned_data = BeautifulSoup(results.text, "html5lib")
+    # Get the canonical object names from the second column
+    # and turn them into NED identifiers
+    results = [x.findAll('td')[1].text.replace(' ','_') for x in ned_data.findAll('tr')]
+    # Return the top N results (from config)
+    return results[:max_objects]
    
