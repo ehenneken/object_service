@@ -170,7 +170,7 @@ class QuerySearch(Resource):
             simbad_fail = False
             ned_fail = False
             sids = simbad_position_query(coordinates, radius)
-            if len(sids) > 0:
+            if len(sids) > 0 and type(sids) == list:
                 vq = verify_query(sids, 'simbid')
                 if not vq:
                     current_app.logger.info('SIMBAD identifiers not in Solr index: {0}'.format(",".join(sids)))
@@ -181,7 +181,7 @@ class QuerySearch(Resource):
                 simbad_fail = result['simbad']['Error Info']
                 result['simbad'] = []
             nids = ned_position_query(coordinates, radius)
-            if len(nids) > 0:
+            if len(nids) > 0 and type(nids) == list:
                 vq = verify_query(nids, 'nedid')
                 if not vq:
                     current_app.logger.info('NED identifiers not in Solr index: {0}'.format(",".join(nids)))

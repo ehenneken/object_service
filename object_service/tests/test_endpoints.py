@@ -258,48 +258,19 @@ class TestExpectedResults(TestCase):
         for s in check_strings:
             self.assertIn(s, translated_query)
 
-    @httpretty.activate
-    def test_position_search_NED_SIMBAD_error(self):
+    @mock.patch('object_service.NED.current_app.client.get')
+    @mock.patch('object_service.SIMBAD.current_app.client.post')
+    def test_position_search_NED_SIMBAD_error(self, simbad_mock, ned_mock):
         '''Test to see if calling the position search endpoint
            works for valid data'''
-        mockdata =  {"data":[[1575544, "NAME ANDROMEDA","NAME ANDROMEDA"],[3133169, "NAME LMC", "NAME LMC"]]}
-        def exceptionCallback(request, uri, headers):
-            data = request.body
-            if data.decode('utf-8').find('SELECT+TOP+1+') > -1:
-                return (200, headers, '%s'%json.dumps(mockdata))
-            service = 'SIMBAD'
-            if 'caltech' in uri:
-                service = 'NED'
-            raise Exception('Query to {0} blew up!'.format(service))
         # Define mock data to be returned to mock external SIMBAD query
         SIMBAD_QUERY_URL = self.app.config.get('OBJECTS_SIMBAD_TAP_URL')
-        simbad_mockdata =  {"data":[[1575544, "NAME ANDROMEDA","NAME ANDROMEDA"],[3133169, "NAME LMC", "NAME LMC"],[3253618, "NAME SMC", "NAME SMC"]]}
+        simbad_mock.side_effect = Exception('SIMBAD query blew up!')
         # Define mock data to be returned to mock external NED query
         NED_QUERY_URL = self.app.config.get('OBJECTS_NED_OBJSEARCH')
-        ned_mockdata = "\n".join(['bibcode1|Andromeda|foo|bar'])
-        # Define the mock data to be returned to mock the Solr verify request
-        SOLR_QUERY_URL = self.app.config.get('OBJECTS_SOLRQUERY_URL')
-        solr_mockdata = {"response":{
-            "docs":["a","b","c"]
-        }}
+        ned_mock.side_effect = Exception('NED query blew up!')
         # The test query we will provide
         query = 'bibstem:A&A object:"80.89416667 -69.75611111:0.166666" year:2015'
-        # Mock the SIMBAD reponse
-        httpretty.register_uri(
-            httpretty.POST, SIMBAD_QUERY_URL,
-            content_type='application/json',
-            body=exceptionCallback)
-        # Mock the NED response
-        httpretty.register_uri(
-            httpretty.GET, NED_QUERY_URL,
-            content_type='text/plain',
-            body=exceptionCallback)
-        # Mock the Solr reponse for the "verify" check
-        httpretty.register_uri(
-            httpretty.GET, SOLR_QUERY_URL,
-            content_type='application/json',
-            status=200,
-            body='%s'%json.dumps(solr_mockdata))
         # Do the POST request
         r = self.client.post(
             url_for('querysearch'),
@@ -307,8 +278,7 @@ class TestExpectedResults(TestCase):
             data=json.dumps({'query': query}))
         # The response should have a status code 200
         # See if we received the expected results
-        expected = {'Error':'Unable to get results!',
-                    'Error Info':'SIMBAD request failed (not timeout): Query to SIMBAD blew up!, NED cone search failed (Query to NED blew up!)'}
+        expected = {'Error': 'Unable to get results!', 'Error Info': 'SIMBAD request failed (not timeout): SIMBAD query blew up!, NED cone search failed (NED query blew up!)'}
         self.assertEqual(r.json, expected)
 
     @httpretty.activate
