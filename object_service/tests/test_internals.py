@@ -431,7 +431,8 @@ class TestDataRetrieval(TestCase):
         # Next query with this positional information
         result = simbad_position_query(coords, radius)
         expected = [u'2011AcA....61..103G', u'2003A&A...405..111G']
-        self.assertCountEqual(result, expected)
+        for b in expected:
+            self.assertIn(b, result)
 
     @mock.patch('object_service.SIMBAD.current_app.client.post')
     def test_do_cone_search_exception(self, mocked_post):
